@@ -61,19 +61,17 @@ export const useChatStore = create((set, get) => ({
 
     addIncomingMessage: (message, conversationId) => {
         const { activeConversation, conversations } = get();
-
         if (activeConversation?._id === conversationId) {
-            set((state) => ({
-                messages: [...state.messages, message],
-            }));
+            set((state) => ({ messages: [...state.messages, message] }));
         }
-
         set((state) => ({
-            conversations: state.conversations.map((c) =>
-                c._id === conversationId
-                    ? { ...c, lastMessage: message, updatedAt: new Date().toISOString() }
-                    : c
-            ).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
+            conversations: state.conversations
+                .map((c) =>
+                    c._id === conversationId
+                        ? { ...c, lastMessage: message, updatedAt: new Date().toISOString() }
+                        : c
+                )
+                .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
         }));
     },
 
