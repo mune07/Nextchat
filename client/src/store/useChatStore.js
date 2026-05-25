@@ -13,19 +13,22 @@ export const useChatStore = create((set, get) => ({
     searchResults: [],
     isSearching: false,
 
-    setOnlineUsers: (users) => set({ onlineUsers: users }),
+    setOnlineUsers: (users) => set({ onlineUsers: Array.isArray(users) ? users : [] }),
 
     fetchConversations: async () => {
         set({ isLoadingConversations: true });
         try {
             const res = await axiosInstance.get('/conversations');
             set({ conversations: Array.isArray(res.data) ? res.data : [] });
-        } catch (error) {
-            toast.error('Failed to load conversations');
+        } catch {
             set({ conversations: [] });
         } finally {
             set({ isLoadingConversations: false });
         }
+    },
+
+    setActiveConversation: (conversation) => {
+        set({ activeConversation: conversation, messages: [] });
     },
 
     fetchMessages: async (conversationId) => {
@@ -33,8 +36,7 @@ export const useChatStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get(`/messages/${conversationId}`);
             set({ messages: Array.isArray(res.data) ? res.data : [] });
-        } catch (error) {
-            toast.error('Failed to load messages');
+        } catch {
             set({ messages: [] });
         } finally {
             set({ isLoadingMessages: false });
@@ -46,26 +48,28 @@ export const useChatStore = create((set, get) => ({
             const res = await axiosInstance.post('/messages', data);
             set((state) => ({ messages: [...state.messages, res.data] }));
             set((state) => ({
-                conversations: state.conversations.map((c) =>
-                    c._id === data.conversationId
-                        ? { ...c, lastMessage: res.data, updatedAt: new Date().toISOString() }
-                        : c
-                ).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
+                conversations: [...state.conversations]
+                    .map((c) =>
+                        c._id === data.conversationId
+                            ? { ...c, lastMessage: res.data, updatedAt: new Date().toISOString() }
+                            : c
+                    )
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
             }));
             return res.data;
-        } catch (error) {
+        } catch {
             toast.error('Failed to send message');
             return null;
         }
     },
 
     addIncomingMessage: (message, conversationId) => {
-        const { activeConversation, conversations } = get();
+        const { activeConversation } = get();
         if (activeConversation?._id === conversationId) {
             set((state) => ({ messages: [...state.messages, message] }));
         }
         set((state) => ({
-            conversations: state.conversations
+            conversations: [...state.conversations]
                 .map((c) =>
                     c._id === conversationId
                         ? { ...c, lastMessage: message, updatedAt: new Date().toISOString() }
@@ -83,7 +87,7 @@ export const useChatStore = create((set, get) => ({
                 set((state) => ({ conversations: [res.data, ...state.conversations] }));
             }
             return res.data;
-        } catch (error) {
+        } catch {
             toast.error('Failed to open conversation');
             return null;
         }
@@ -110,8 +114,8 @@ export const useChatStore = create((set, get) => ({
     updateMessagesSeen: (conversationId, seenBy) => {
         set((state) => ({
             messages: state.messages.map((m) =>
-                m.conversationId === conversationId && !m.seenBy.includes(seenBy)
-                    ? { ...m, seenBy: [...m.seenBy, seenBy] }
+                m.conversationId === conversationId && !m.seenBy?.includes(seenBy)
+                    ? { ...m, seenBy: [...(m.seenBy || []), seenBy] }
                     : m
             ),
         }));
@@ -123,7 +127,7 @@ export const useChatStore = create((set, get) => ({
             set((state) => ({
                 messages: state.messages.map((m) => (m._id === messageId ? res.data : m)),
             }));
-        } catch (error) {
+        } catch {
             toast.error('Failed to add reaction');
         }
     },
@@ -142,9 +146,7 @@ export const useChatStore = create((set, get) => ({
             typingUsers: {
                 ...state.typingUsers,
                 [conversationId]: isTyping
-                    ? [...(state.typingUsers[conversationId] || []), userId].filter(
-                        (v, i, a) => a.indexOf(v) === i
-                    )
+                    ? [...new Set([...(state.typingUsers[conversationId] || []), userId])]
                     : (state.typingUsers[conversationId] || []).filter((id) => id !== userId),
             },
         }));
@@ -154,7 +156,7 @@ export const useChatStore = create((set, get) => ({
         if (!query.trim()) { set({ searchResults: [] }); return; }
         set({ isSearching: true });
         try {
-            const res = await axiosInstance.get(`/auth/search?query=${query}`);
+            const res = await axiosInstance.get(`/auth/search?query=${encodeURIComponent(query)}`);
             set({ searchResults: Array.isArray(res.data) ? res.data : [] });
         } catch {
             set({ searchResults: [] });
