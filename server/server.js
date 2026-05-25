@@ -22,9 +22,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
 
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'https://nexchat-app-jngn.onrender.com',
+    'http://localhost:5173',
+];
+
 export const io = new Server(httpServer, {
     cors: {
-        origin: [process.env.CLIENT_URL, 'https://nexchat-app-jngn.onrender.com'],
+        origin: allowedOrigins,
         credentials: true,
     },
 });
@@ -32,7 +38,7 @@ export const io = new Server(httpServer, {
 socketHandler(io);
 
 app.use(cors({
-    origin: [process.env.CLIENT_URL, 'https://nexchat-app-jngn.onrender.com'],
+    origin: allowedOrigins,
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
