@@ -4,8 +4,6 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
@@ -15,9 +13,6 @@ import socketHandler from './socket/socketHandler.js';
 
 dotenv.config();
 connectDB();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -49,12 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/dist')));
-    app.get(/.*/, (req, res) => {
-        res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-    });
-}
+
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'NexChat API running ✅' });
