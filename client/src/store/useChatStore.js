@@ -19,25 +19,23 @@ export const useChatStore = create((set, get) => ({
         set({ isLoadingConversations: true });
         try {
             const res = await axiosInstance.get('/conversations');
-            set({ conversations: res.data });
+            set({ conversations: Array.isArray(res.data) ? res.data : [] });
         } catch (error) {
             toast.error('Failed to load conversations');
+            set({ conversations: [] });
         } finally {
             set({ isLoadingConversations: false });
         }
-    },
-
-    setActiveConversation: (conversation) => {
-        set({ activeConversation: conversation, messages: [] });
     },
 
     fetchMessages: async (conversationId) => {
         set({ isLoadingMessages: true });
         try {
             const res = await axiosInstance.get(`/messages/${conversationId}`);
-            set({ messages: res.data });
+            set({ messages: Array.isArray(res.data) ? res.data : [] });
         } catch (error) {
             toast.error('Failed to load messages');
+            set({ messages: [] });
         } finally {
             set({ isLoadingMessages: false });
         }
@@ -155,14 +153,11 @@ export const useChatStore = create((set, get) => ({
     },
 
     searchUsers: async (query) => {
-        if (!query.trim()) {
-            set({ searchResults: [] });
-            return;
-        }
+        if (!query.trim()) { set({ searchResults: [] }); return; }
         set({ isSearching: true });
         try {
             const res = await axiosInstance.get(`/auth/search?query=${query}`);
-            set({ searchResults: res.data });
+            set({ searchResults: Array.isArray(res.data) ? res.data : [] });
         } catch {
             set({ searchResults: [] });
         } finally {
