@@ -24,7 +24,7 @@ const httpServer = createServer(app);
 
 export const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CLIENT_URL,
+        origin: [process.env.CLIENT_URL, 'https://nexchat-app-jngn.onrender.com'],
         credentials: true,
     },
 });
@@ -32,7 +32,7 @@ export const io = new Server(httpServer, {
 socketHandler(io);
 
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, 'https://nexchat-app-jngn.onrender.com'],
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
