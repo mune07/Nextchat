@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { getCloudinary } from '../utils/cloudinaryConfig.js';
 
+
 export const register = async (req, res) => {
     try {
         const { fullName, username, email, password } = req.body;
@@ -21,14 +22,13 @@ export const register = async (req, res) => {
         }
         const user = new User({ fullName, username, email, password });
         await user.save();
-        generateToken(user._id, res);
-        return res.status(201).json(user.toPublicJSON());
+        const token = generateToken(user._id, res);
+        return res.status(201).json({ ...user.toPublicJSON(), token });
     } catch (error) {
         console.error('REGISTER ERROR:', error.message);
         return res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -43,8 +43,8 @@ export const login = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
-        generateToken(user._id, res);
-        return res.status(200).json(user.toPublicJSON());
+        const token = generateToken(user._id, res);
+        return res.status(200).json({ ...user.toPublicJSON(), token });
     } catch (error) {
         console.error('LOGIN ERROR:', error.message);
         return res.status(500).json({ message: 'Server error', error: error.message });
